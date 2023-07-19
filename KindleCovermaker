@@ -1,0 +1,38 @@
+#!/bin/bash
+NO_IMGS=4;
+IMG_DIR="/tmp/cover_images";
+
+RES="1080x1528"
+RATIO="1:1.41421" # A4 ratio
+
+SAVE_TITLE="Save File"
+ERR_TITLE="ERROR"
+ERR_TXT="Terminating..."
+
+mkdir $IMG_DIR;
+
+function error {
+	zenity --error --title $ERR_TITLE --text $ERR_TXT
+	rm -r $IMG_DIR
+	exit;
+}
+
+for i in $(seq 1 $NO_IMGS);
+do
+	current_img="$IMG_DIR/img_$i";
+	# Get the images
+	wget -O $current_img $(zenity --entry --title "File Link" --text "File $i:") || error;
+
+	new_img="$IMG_DIR/modf_img_$i.jpg";
+	#Process the images so that they're the same ratio
+	convert $current_img -resize $RATIO $new_img || error;
+done
+
+#Get final save location
+img_final=$(zenity --file-selection --save --confirm-overwrite --title $SAVE_TITLE);
+
+#Add images to 2x2 contact sheet
+montage $( ls $IMG_DIR/*.jpg ) -adjoin -geometry $RES -tile 2x2 -border +3 $img_final.jpg;
+
+#remove contents of $IMG_DIR
+rm -r $IMG_DIR;
